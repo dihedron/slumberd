@@ -1,34 +1,29 @@
 package main
 
 import (
-	"fmt"
-	"log/slog"
-	"os"
-	"time"
-
-	"github.com/dihedron/slumberd/configuration"
-	"github.com/dihedron/slumberd/internal/power"
-	"github.com/dihedron/slumberd/metadata"
-	"github.com/dihedron/slumberd/pointer"
-	"github.com/dihedron/slumberd/timex"
-	"github.com/jessevdk/go-flags"
-	"gopkg.in/yaml.v3"
+	"github.com/dihedron/slumberd/cmd"
 )
 
 func main() {
 	defer cleanup()
+	cmd.Execute()
+}
+
+/*
+func main2() {
+	defer cleanup()
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
-		case "v", "version", "-version", "--version":
-			slog.Info("executing version")
-			if len(os.Args) > 2 && (os.Args[2] == "--verbose" || os.Args[2] == "-v") {
-				metadata.PrintFull(os.Stdout)
-				os.Exit(0)
-			} else {
-				metadata.Print(os.Stdout)
-				os.Exit(0)
-			}
+		// case "v", "version", "-version", "--version":
+		// 	slog.Info("executing version")
+		// 	if len(os.Args) > 2 && (os.Args[2] == "--verbose" || os.Args[2] == "-v") {
+		// 		metadata.PrintFull(os.Stdout)
+		// 		os.Exit(0)
+		// 	} else {
+		// 		metadata.Print(os.Stdout)
+		// 		os.Exit(0)
+		// 	}
 		case "p", "poweroff", "-poweroff", "--poweroff":
 			slog.Info("executing poweroff")
 			power.Shutdown()
@@ -75,3 +70,4 @@ func main() {
 	}
 
 }
+*/

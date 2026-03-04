@@ -1,31 +1,27 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
-	"os"
-	"os/signal"
-	"path/filepath"
-	"sync"
-	"syscall"
-	"time"
 
-	"github.com/dihedron/slumberd/configuration"
-	"github.com/dihedron/slumberd/internal/detect"
-	"github.com/fsnotify/fsnotify"
+	"github.com/dihedron/slumberd/version"
 )
 
 // Command is the main command that runs the application as
 // a daemon (a systemd unit) in background.
 type Command struct {
-	// Configuration is the configuration file for the daemon.
-	Configuration configuration.Configuration `short:"c" long:"configuration" description:"Configuration file" required:"true" default:"/home/developer/packages.yaml"`
+
+	// Version prints slumberd version information and exits.
+	//lint:ignore SA5008 commands can have multiple aliases
+	Version version.Version `command:"version" alias:"ver" alias:"v" description:"Show the command version and exit."`
 }
 
 // Execute runs the daemon command.
 func (cmd *Command) Execute(args []string) error {
 	slog.Info("starting daemon")
+	return nil
+}
 
+/*
 	slog.Info("starting daemon with configuration",
 		"timeout", cmd.Configuration.Timeout,
 		"frequency", cmd.Configuration.Frequency,
@@ -109,4 +105,4 @@ func (cmd *Command) Execute(args []string) error {
 			}
 		}
 	}
-}
+*/
