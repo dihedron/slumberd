@@ -2,19 +2,33 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
-	"time"
 
-	"github.com/dihedron/slumberd/configuration"
-	"github.com/dihedron/slumberd/internal/power"
-	"github.com/dihedron/slumberd/metadata"
-	"github.com/dihedron/slumberd/pointer"
-	"github.com/dihedron/slumberd/timex"
+	"github.com/dihedron/slumberd/command"
 	"github.com/jessevdk/go-flags"
-	"gopkg.in/yaml.v3"
 )
 
+func main() {
+	defer cleanup()
+
+	options := command.Commands{}
+	if _, err := flags.NewParser(&options, flags.Default).Parse(); err != nil {
+		switch flagsErr := err.(type) {
+		case flags.ErrorType:
+			if flagsErr == flags.ErrHelp {
+				os.Exit(0)
+			}
+			os.Exit(1)
+		case *flags.Error:
+			fmt.Fprintf(os.Stderr, "error: %s (%T)\n", err, err)
+			os.Exit(1)
+		default:
+			os.Exit(1)
+		}
+	}
+}
+
+/*
 func main() {
 	defer cleanup()
 
@@ -75,3 +89,4 @@ func main() {
 	}
 
 }
+*/

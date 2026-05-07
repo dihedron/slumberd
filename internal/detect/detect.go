@@ -8,7 +8,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -137,9 +136,4 @@ func IsAnyEditorActive(procPath string) []string {
 
 	fmt.Println(" > no active editors found...")
 	return nil
-}
-
-func isPID(name string) bool {
-	_, err := strconv.Atoi(name)
-	return err == nil
 }
