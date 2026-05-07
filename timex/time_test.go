@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// TestDuration tests the Duration type.
 func TestDuration(t *testing.T) {
 	var d Duration
 	tests := []struct {

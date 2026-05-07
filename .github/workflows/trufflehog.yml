@@ -9,6 +9,9 @@ on:
       - "**"
   workflow_dispatch: # Allows you to run this manually from the Actions tab
 
+permissions:
+  contents: read
+
 jobs:
   scan:
     name: Secret Scanning

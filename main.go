@@ -77,16 +77,12 @@ func main() {
 				os.Exit(0)
 			}
 			os.Exit(1)
-		default:
-			//fmt.Fprintf(os.Stderr, "%v\n", err)
+		case *flags.Error:
+			fmt.Fprintf(os.Stderr, "error: %s (%T)\n", err, err)
 			os.Exit(1)
-		}
-	} else {
-		if err := command.Execute(args); err != nil {
-			//fmt.Fprintf(os.Stderr, "%v\n", err)
+		default:
 			os.Exit(1)
 		}
 	}
-
 }
 */

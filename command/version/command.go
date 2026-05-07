@@ -8,7 +8,7 @@ import (
 )
 
 // Version is the command that prints information about the application
-// or plugin to the console; it support both compact and verbose mode.
+// or plugin to the console; it supports both compact and verbose mode.
 type Version struct {
 	// Verbose is the flag that indicates whether to print verbose information about the application.
 	Verbose bool `short:"v" long:"verbose" description:"Print verbose information about the application."`

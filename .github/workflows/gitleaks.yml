@@ -1,10 +1,16 @@
 name: Gitleaks
+
 on:
   push:
   pull_request:
   workflow_dispatch:
   schedule:
     - cron: "0 4 * * *" # run once a day at 4 AM
+
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   scan:
     name: Gitleaks
@@ -14,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:

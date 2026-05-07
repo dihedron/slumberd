@@ -21,14 +21,11 @@ func SetNetworkPaths(tcp, tcp6 string) {
 
 // HasActiveSSHConnections checks if there are any established incoming SSH connections.
 func HasActiveSSHConnections() (bool, error) {
-	active, err := checkTCP(tcpPath)
-	if err != nil {
+	if active, err := checkTCP(tcpPath); err != nil {
 		return false, err
-	}
-	if active {
+	} else if active {
 		return true, nil
 	}
-
 	return checkTCP(tcp6Path)
 }
 
@@ -72,11 +69,4 @@ func checkTCP(filename string) (bool, error) {
 	}
 
 	return false, scanner.Err()
-}
-
-// ConnectionInfo holds the basic details we need to verify an SSH connection
-type ConnectionInfo struct {
-	State      string
-	LocalPort  int
-	RemotePort int
 }
