@@ -132,6 +132,10 @@ func (cmd *API) Execute(args []string) error {
 		})
 	}
 
+	// /login
+	// https://github.com/puikinsh/login-forms/tree/main/forms/glassmorphism
+	// https://github.com/puikinsh/login-forms/tree/main/forms/material
+
 	slog.Info("API server running", "address", cmd.Address)
 	err := router.Run(cmd.Address)
 	if err != nil {
