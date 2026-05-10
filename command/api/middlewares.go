@@ -9,10 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// StructuredLogger logs requests in a structured format.
-// It uses slog to log requests in a structured format.
-// It is recommended to use this logger instead of gin.Logger().
-func StructuredLogger(logger *slog.Logger) gin.HandlerFunc {
+// Logger logs requests in a structured format.
+func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
@@ -20,19 +18,11 @@ func StructuredLogger(logger *slog.Logger) gin.HandlerFunc {
 
 		c.Next()
 
-		logger.Info("request",
-			slog.String("method", c.Request.Method),
-			slog.String("path", path),
-			slog.String("query", query),
-			slog.Int("status", c.Writer.Status()),
-			slog.Duration("latency", time.Since(start)),
-			slog.String("client IP", c.ClientIP()),
-			slog.Int("body size", c.Writer.Size()),
-		)
+		slog.Info("request performed", "method", c.Request.Method, "path", path, "query", query, "status", c.Writer.Status(), "latency", time.Since(start), "client IP", c.ClientIP(), "body size", c.Writer.Size())
 
 		if len(c.Errors) > 0 {
 			for _, err := range c.Errors {
-				logger.Error("request error", slog.String("error", err.Error()))
+				slog.Error("request error", "error", err.Error())
 			}
 		}
 	}
@@ -57,7 +47,7 @@ func (a *StaticAuthenticator) Authenticate(c *gin.Context, username, password st
 func SessionAuthMiddleware(realm string, authenticator Authenticator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
-		user := session.Get("user")
+		user := session.Get("username")
 
 		// check if the user already has a valid session
 		if user != nil {
@@ -71,7 +61,7 @@ func SessionAuthMiddleware(realm string, authenticator Authenticator) gin.Handle
 		username, password, hasAuth := c.Request.BasicAuth()
 		if hasAuth && authenticator.Authenticate(c, username, password) {
 			// Basic Auth is valid, create a session for future requests.
-			session.Set("user", username)
+			session.Set("username", username)
 			if err := session.Save(); err != nil {
 				slog.Error("failed to save session", "error", err)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})

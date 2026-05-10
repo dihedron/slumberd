@@ -1,7 +1,6 @@
 package api
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -75,23 +74,24 @@ func (cmd *API) Execute(args []string) error {
 	slog.Info("starting API server", "address", cmd.Address)
 
 	router := gin.New()
+	router.SetTrustedProxies(nil)
 
 	// generate a session key from random bytes
 	// this is used to secure the session cookie
-	authenticationKey := make([]byte, 32)
-	rand.Read(authenticationKey)
-	encryptionKey := make([]byte, 32)
-	rand.Read(encryptionKey)
+	// authenticationKey := make([]byte, 32)
+	// rand.Read(authenticationKey)
+	// encryptionKey := make([]byte, 32)
+	// rand.Read(encryptionKey)
 
 	// initialize the session store (using a cookie for simplicity here)
 	// in production, use a strong, environment-variable-injected secret key.
-	store := cookie.NewStore(authenticationKey, encryptionKey)
+	//store := cookie.NewStore(authenticationKey, encryptionKey)
 
-	router.Use(StructuredLogger(slog.Default()))
+	router.Use(Logger())
 	router.Use(gin.Recovery())
 
 	// register the session middleware FIRST so subsequent middlewares can use it
-	router.Use(sessions.Sessions("api_session", store))
+	router.Use(sessions.Sessions("api_session", cookie.NewStore([]byte("super-secret-key"))))
 
 	// define an authenticator
 	authenticator := &StaticAuthenticator{
