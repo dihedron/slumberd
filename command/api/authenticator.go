@@ -120,50 +120,45 @@ func (a *LDAPAuthenticator) Authenticate(username, password string) (bool, error
 		return false, fmt.Errorf("failed to search for user: %w", err)
 	}
 
-	// Handle search results
+	// handle search results
 	if len(result.Entries) == 0 {
 		return false, fmt.Errorf("user not found")
 	}
+
 	if len(result.Entries) > 1 {
 		return false, fmt.Errorf("multiple users found with the same username")
 	}
 
+	slog.Debug("user successfully retrieved")
+
 	// Extract the user's exact DN from the search result
 	dn := result.Entries[0].DN
+
+	slog.Debug("user's DN found", "username", username, "dn", dn)
 
 	connection, err := ldap.DialURL(a.address)
 	if err != nil {
 		slog.Error("error connecting to LDAP server", "address", a.address, "error", err)
 		return false, fmt.Errorf("failed to connect to LDAP: %w", err)
 	}
+	slog.Debug("successfully connected to LDAP server")
 	defer connection.Close()
 
 	// Step 4: Re-Bind as the specific user to verify their password
 	err = connection.Bind(dn, password)
 	if err != nil {
-		// If the error is LDAP Result Code 49 (Invalid Credentials), the password was wrong.
-		// We return false, but no error, as this is an expected authentication failure.
+		// if the error is LDAP Result Code 49 (Invalid Credentials), the password was wrong;
+		// we return false, but no error, as this is an expected authentication failure.
 		if ldap.IsErrorWithCode(err, ldap.LDAPResultInvalidCredentials) {
+			slog.Error("invalid credentials", "error", err)
 			return false, nil
 		}
-		// Any other error means the bind failed for a system reason (e.g., connection lost)
+		// any other error means the bind failed for a system reason (e.g., connection lost)
+		slog.Error("failed to authenticate user", "username", username, "error", err)
 		return false, fmt.Errorf("failed to bind as user: %w", err)
 	}
 
-	// If the second bind succeeds, the credentials are valid!
+	// if the second bind succeeds, the credentials are valid!
+	slog.Info("user successfully authenticated", "username", username)
 	return true, nil
 }
-
-/*
-	if err = connection.Bind(fmt.Sprintf("CN=%s,)", ldap.EscapeFilter(username)), password); err != nil {
-		if ldap.IsErrorWithCode(err, ldap.LDAPResultInvalidCredentials) {
-			slog.Warn("invalid credentials")
-			return false //, nil Bad password
-		}
-		slog.Error("network error connectin to LDAP server", "address", a.address, "error", err)
-		return false // , err Network/System error
-	}
-	slog.Debug("user successfully authenticated", "username", username)
-	return true
-}
-*/
