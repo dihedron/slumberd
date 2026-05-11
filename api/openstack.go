@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"sync"
 
 	"github.com/gophercloud/gophercloud"
@@ -11,22 +12,48 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/pauseunpause"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/startstop"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	"github.com/gophercloud/utils/openstack/clientconfig"
 )
 
-type OpenStackClient struct {
+const DefaultCloud = "openstack"
+
+type Client struct {
 	client *gophercloud.ServiceClient
 	mu     sync.RWMutex
 	cache  map[string]string // userID -> serverID
 }
 
-func NewOpenStackClient() (*OpenStackClient, error) {
-	opts, err := openstack.AuthOptionsFromEnv()
+func New() (*Client, error) {
+	cloud := DefaultCloud
+	if c, ok := os.LookupEnv("OS_CLOUD"); ok {
+		slog.Debug("using custom cloud as per the OS_CLOUD environment variable", "cloud", c)
+		cloud = c
+	}
+
+	opts, err := clientconfig.AuthOptions(&clientconfig.ClientOpts{
+		Cloud: cloud,
+	})
 	if err != nil {
+		slog.Error("failed to get auth options", "error", err)
 		return nil, fmt.Errorf("failed to get auth options: %w", err)
 	}
 
+	return newImpl(*opts)
+}
+
+func NewFromEnv() (*Client, error) {
+	opts, err := openstack.AuthOptionsFromEnv()
+	if err != nil {
+		slog.Error("failed to get auth options from enviroment", "error", err)
+		return nil, fmt.Errorf("failed to get auth options from environment: %w", err)
+	}
+	return newImpl(opts)
+}
+
+func newImpl(opts gophercloud.AuthOptions) (*Client, error) {
 	provider, err := openstack.AuthenticatedClient(opts)
 	if err != nil {
+		slog.Error("error creating athenticated client", "error", err)
 		return nil, fmt.Errorf("failed to authenticate: %w", err)
 	}
 
@@ -34,16 +61,18 @@ func NewOpenStackClient() (*OpenStackClient, error) {
 		Region: "RegionOne", // Should probably be configurable
 	})
 	if err != nil {
+		slog.Error("error creating compute v2 API client", "error", err)
 		return nil, fmt.Errorf("failed to create compute client: %w", err)
 	}
 
-	return &OpenStackClient{
+	return &Client{
 		client: client,
 		cache:  make(map[string]string),
 	}, nil
+
 }
 
-func (c *OpenStackClient) getServerID(ctx context.Context, userID string) (string, error) {
+func (c *Client) getServerID(ctx context.Context, userID string) (string, error) {
 	c.mu.RLock()
 	id, ok := c.cache[userID]
 	c.mu.RUnlock()
@@ -78,7 +107,7 @@ func (c *OpenStackClient) getServerID(ctx context.Context, userID string) (strin
 	return serverID, nil
 }
 
-func (c *OpenStackClient) Start(ctx context.Context, userID string) error {
+func (c *Client) Start(ctx context.Context, userID string) error {
 	id, err := c.getServerID(ctx, userID)
 	if err != nil {
 		return err
@@ -87,7 +116,7 @@ func (c *OpenStackClient) Start(ctx context.Context, userID string) error {
 	return res.ExtractErr()
 }
 
-func (c *OpenStackClient) Stop(ctx context.Context, userID string) error {
+func (c *Client) Stop(ctx context.Context, userID string) error {
 	id, err := c.getServerID(ctx, userID)
 	if err != nil {
 		return err
@@ -96,7 +125,7 @@ func (c *OpenStackClient) Stop(ctx context.Context, userID string) error {
 	return res.ExtractErr()
 }
 
-func (c *OpenStackClient) Pause(ctx context.Context, userID string) error {
+func (c *Client) Pause(ctx context.Context, userID string) error {
 	id, err := c.getServerID(ctx, userID)
 	if err != nil {
 		return err
@@ -105,7 +134,7 @@ func (c *OpenStackClient) Pause(ctx context.Context, userID string) error {
 	return res.ExtractErr()
 }
 
-func (c *OpenStackClient) Unpause(ctx context.Context, userID string) error {
+func (c *Client) Unpause(ctx context.Context, userID string) error {
 	id, err := c.getServerID(ctx, userID)
 	if err != nil {
 		return err
@@ -114,7 +143,7 @@ func (c *OpenStackClient) Unpause(ctx context.Context, userID string) error {
 	return res.ExtractErr()
 }
 
-func (c *OpenStackClient) Status(ctx context.Context, userID string) (string, error) {
+func (c *Client) Status(ctx context.Context, userID string) (string, error) {
 	id, err := c.getServerID(ctx, userID)
 	if err != nil {
 		return "", err
