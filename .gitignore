@@ -30,6 +30,7 @@ go.work.sum
 
 # test files
 _test/
+run.sh
 
 # Editor/IDE
 # .idea/

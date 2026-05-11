@@ -126,7 +126,7 @@ func (cmd *API) Execute(args []string) error {
 				c.Redirect(http.StatusFound, "/api/v1/vm")
 			} else {
 				slog.Debug("logging in user...", "username", username, "password", password)
-				if ok, err := authenticator.Authenticate(c, username, password); ok {
+				if ok, err := authenticator.Authenticate(username, password); ok {
 					slog.Info("user successfully logged in", "username", username)
 					session.Set("username", username)
 					session.Save()

@@ -1,6 +1,7 @@
 package authenticate
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/dihedron/devws/command/api"
@@ -16,20 +17,37 @@ type Authenticate struct {
 	// Password is the password of the user used to bind to the server.
 	Password string `short:"p" long:"password" description:"Bind user's password." default:"<ServiceAccoutSecret>" required:"true" env:"DEVWS_LDAP_PASSWORD"`
 	// BaseDN is the base DN used to perform LDAP searches.
-	BaseDN string `short:"b" long:"base-dn" description:"Base DN used for LDAP searches." default:"dc=example,dc=com"required:"true" env:"DEVWS_LDAP_BASEDN"`
+	BaseDN string `short:"b" long:"base-dn" description:"Base DN used for LDAP searches." default:"dc=example,dc=com" required:"true" env:"DEVWS_LDAP_BASEDN"`
 }
 
 func (cmd *Authenticate) Execute(args []string) error {
 	slog.Debug("running authenticate command", "address", cmd.Address, "username", cmd.Username, "password", cmd.Password, "base DN", cmd.BaseDN, "args", args)
 
-	auth, err := api.NewLDAPAuthenticator(cmd.Username, cmd.Password, cmd.Address, cmd.BaseDN)
+	if len(args) < 2 {
+		slog.Error("invalid format: username and password must be provided")
+		return fmt.Errorf("invalid format: devws [options] <username> <password>")
+	}
+
+	// create the authenticator
+	authenticator, err := api.NewLDAPAuthenticator(cmd.Username, cmd.Password, cmd.Address, cmd.BaseDN)
 	if err != nil {
 		slog.Error("failed to create LDAP authenticator", "error", err)
 		return err
 	}
-	defer auth.Close()
-	//auth.Authenticate()
+	defer authenticator.Close()
 
+	// attempt the user authentication
+	slog.Debug("attempting user authentication", "uaername", args[0], "password", args[1])
+	if ok, err := authenticator.Authenticate(args[0], args[1]); err == nil {
+		if ok {
+			slog.Debug("user successfully authenticated", "username", args[0])
+		} else {
+			slog.Debug("user authentication failed", "username", args[0])
+		}
+	} else {
+		slog.Error("failed authenticationg user", "username", args[0], "error", err)
+		return err
+	}
 	slog.Debug("authenticate command completed")
 	return nil
 }

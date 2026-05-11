@@ -46,7 +46,7 @@ func SessionAuthMiddleware(realm string, authenticator Authenticator) gin.Handle
 		// no valid session, check for Basic Authentication headers
 		username, password, hasAuth := c.Request.BasicAuth()
 		if hasAuth {
-			if ok, _ := authenticator.Authenticate(c, username, password); ok {
+			if ok, _ := authenticator.Authenticate(username, password); ok {
 				// Basic Auth is valid, create a session for future requests.
 				session.Set("username", username)
 				if err := session.Save(); err != nil {

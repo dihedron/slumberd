@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/gin-gonic/gin"
 	"github.com/go-ldap/ldap/v3"
 )
 
@@ -13,7 +12,7 @@ type Authenticator interface {
 	// authenticated; false (with no error) if the user's credentials
 	// are invalid; false (with an error) if the authenticator encountered
 	// and internal processing error.
-	Authenticate(c *gin.Context, username, password string) (bool, error)
+	Authenticate(username, password string) (bool, error)
 	// Close can be used to perform cleanup operations.
 	Close() error
 }
@@ -39,7 +38,7 @@ func WithUser(username, password string) func(*StaticAuthenticator) {
 	}
 }
 
-func (a *StaticAuthenticator) Authenticate(c *gin.Context, username, password string) (bool, error) {
+func (a *StaticAuthenticator) Authenticate(username, password string) (bool, error) {
 	if pass, exists := a.accounts[username]; exists {
 		slog.Debug("user successfuilly authenticated", "username", username, "password", password)
 		return pass == password, nil
@@ -61,6 +60,9 @@ type LDAPAuthenticator struct {
 	//filter     string
 }
 
+// NewLDAPAuthenticator initialises an LDAP authenticator using
+// the given LDAP server address, service account and password;
+// moreover is stores the BaseDN used for subsequent queries.
 func NewLDAPAuthenticator(account, password, address, basedn string) (*LDAPAuthenticator, error) {
 
 	slog.Debug("connecting to LDAP server", "address", address, "account", account, "password", password, "base DN", basedn)
@@ -79,7 +81,7 @@ func NewLDAPAuthenticator(account, password, address, basedn string) (*LDAPAuthe
 		return nil, fmt.Errorf("failed to bind service account: %w", err)
 	}
 
-	//filter := fmt.Sprintf("(&(objectClass=person)(uid=%s))", ldap.EscapeFilter(username))
+	slog.Info("successfully connected to LDAP server")
 
 	return &LDAPAuthenticator{
 		address:    address,
@@ -97,7 +99,7 @@ func (a *LDAPAuthenticator) Close() error {
 	return nil
 }
 
-func (a *LDAPAuthenticator) Authenticate(c *gin.Context, username, password string) (bool, error) {
+func (a *LDAPAuthenticator) Authenticate(username, password string) (bool, error) {
 
 	// search for the user's Distinguished Name (DN)
 	search := ldap.NewSearchRequest(
