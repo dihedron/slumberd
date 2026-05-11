@@ -93,20 +93,19 @@ func (cmd *API) Execute(args []string) error {
 	)
 
 	// define an authenticator
-	authenticator := &StaticAuthenticator{
-		Accounts: map[string]string{
-			"admin":     "QWERTY",
-			"developer": "QWERTY",
-		},
-	}
+	authenticator := NewStaticAuthenticator(
+		WithUser("admin", "QWERTY"),
+		WithUser("developer", "QWERTY"),
+	)
 
 	// the /login and /logout routes do not need authentication
 	unauthenticated := router.Group("")
 	{
 		unauthenticated.StaticFile("/favicon.ico", "./command/api/assets/favicon.ico")
+		unauthenticated.StaticFile("/devws.png", "./command/api/assets/devws.png")
 		unauthenticated.StaticFile("/login", "./command/api/assets/login.html")
-		// unauthenticated.StaticFile("/style.css", "./command/api/assets/style.css")
-		// unauthenticated.StaticFile("/script.js", "./command/api/assets/script.js")
+		unauthenticated.StaticFile("/style.css", "./command/api/assets/style.css")
+		unauthenticated.StaticFile("/background.jpg", "./command/api/assets/background.jpg")
 		unauthenticated.GET("/", func(c *gin.Context) {
 			session := sessions.Default(c)
 			if username := session.Get("username"); username != nil {
@@ -127,12 +126,14 @@ func (cmd *API) Execute(args []string) error {
 				c.Redirect(http.StatusFound, "/api/v1/vm")
 			} else {
 				slog.Debug("logging in user...", "username", username, "password", password)
-				if authenticator.Authenticate(c, username, password) {
+				if ok, err := authenticator.Authenticate(c, username, password); ok {
 					slog.Info("user successfully logged in", "username", username)
 					session.Set("username", username)
 					session.Save()
 					c.Redirect(http.StatusFound, "/api/v1/vm")
 					return
+				} else {
+					slog.Error("failed to autheticate user", "username", username, "error", err)
 				}
 				c.Redirect(http.StatusFound, "/login")
 			}

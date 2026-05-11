@@ -45,17 +45,19 @@ func SessionAuthMiddleware(realm string, authenticator Authenticator) gin.Handle
 
 		// no valid session, check for Basic Authentication headers
 		username, password, hasAuth := c.Request.BasicAuth()
-		if hasAuth && authenticator.Authenticate(c, username, password) {
-			// Basic Auth is valid, create a session for future requests.
-			session.Set("username", username)
-			if err := session.Save(); err != nil {
-				slog.Error("failed to save session", "error", err)
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+		if hasAuth {
+			if ok, _ := authenticator.Authenticate(c, username, password); ok {
+				// Basic Auth is valid, create a session for future requests.
+				session.Set("username", username)
+				if err := session.Save(); err != nil {
+					slog.Error("failed to save session", "error", err)
+					c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to save session"})
+					return
+				}
+				// proceed to the API handler
+				c.Next()
 				return
 			}
-			// proceed to the API handler
-			c.Next()
-			return
 		}
 
 		// no valid session and no/invalid Basic Auth; challenge the client.

@@ -2,16 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!--
-    <link rel="stylesheet" href="style.css">
--->
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div>
+    <div class="form-container">
         <form id="login" name="login" method="post" action="/login">
-            <label for="username">Username: </label><input type="text" id="username" name="username" placeholder="enter username">
-            <label for="password">Password: </label><input type="password" id="password" name="password" placeholder="enter password">
-            <button type="submit">Login</button>
+            <div class="imgcontainer">
+                <img src="devws.png" alt="Avatar" class="avatar">
+            </div>
+            <div class="container">
+                <label for="username">Username: </label><input type="text" id="username" name="username" placeholder="your username here..." required>
+                <label for="password">Password: </label><input type="password" id="password" name="password" placeholder="your password here..." required>
+                <button type="submit">Login</button>
+            </div>
         </form>
     </div>
 </body>
