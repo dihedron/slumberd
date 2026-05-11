@@ -6,8 +6,8 @@ import (
 )
 
 func TestHasActiveSSHConnections(t *testing.T) {
-	for range 250 {
-		time.Sleep(100 * time.Millisecond)
+	for range 100 {
+		time.Sleep(250 * time.Millisecond)
 		active, err := HasActiveSSHConnections()
 		if err != nil {
 			t.Errorf("error checking for active SSH connections: %v", err)

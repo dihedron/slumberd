@@ -9,6 +9,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack"
 )
 
+// ServiceType represents the type of OpenStack service.
 type ServiceType string
 
 const (
@@ -38,11 +39,26 @@ var serviceConfigMap = map[ServiceType]ServiceInfo{
 		constructor:  openstack.NewBareMetalV1,
 		microversion: "1.58",
 	},
-	IdentityV3:     openstack.NewIdentityV3,
-	ComputeV2:      openstack.NewComputeV2,
-	NetworkingV2:   openstack.NewNetworkV2,
-	BlockStorageV3: openstack.NewBlockStorageV3,
-	ImageV2:        openstack.NewImageServiceV2,
+	IdentityV3: {
+		constructor:  openstack.NewIdentityV3,
+		microversion: "3.13",
+	},
+	ComputeV2: {
+		constructor:  openstack.NewComputeV2,
+		microversion: "2.79",
+	},
+	NetworkingV2: {
+		constructor:  openstack.NewNetworkV2,
+		microversion: "2.35",
+	},
+	BlockStorageV3: {
+		constructor:  openstack.NewBlockStorageV3,
+		microversion: "3.59",
+	},
+	ImageV2: {
+		constructor:  openstack.NewImageServiceV2,
+		microversion: "2.9",
+	},
 }
 
 const Region = "RegionOne"
@@ -54,7 +70,6 @@ type APIClient struct {
 }
 
 func (c *APIClient) GetServiceClient(key ServiceType) (*gophercloud.ServiceClient, error) {
-
 	c.mutex.RLock()
 	if service, ok := c.services[key]; ok && service != nil {
 		slog.Debug("returning existing service client", "type", string(key))
@@ -75,38 +90,20 @@ func (c *APIClient) initServiceClient(key ServiceType) (*gophercloud.ServiceClie
 
 	slog.Debug("creating new service client", "type", string(key))
 
-	client, err := serviceConfigMap[key](c.Client, gophercloud.EndpointOpts{Region: Region})
+	client, err := serviceConfigMap[key].constructor(c.Client, gophercloud.EndpointOpts{Region: Region})
 
 	if err != nil {
-		c.Logger().Error().Str("type", string(key)).Err(err).Msg("error creating service client")
+		slog.Error("error creating service client", "type", string(key), "error", err)
 		return nil, err
 	}
-	client.Microversion = serviceConfigMap[key].getMicroversion(&c.Spec)
+	client.Microversion = serviceConfigMap[key].microversion
 
 	// save to object
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.services[key] = client
 
-	c.Logger().Info().Str("type", string(key)).Msg("new service client ready")
+	slog.Info("new service client ready", "type", string(key))
 
 	return client, nil
 }
-
-/*
-const (
-
-	// defaults currently referring to Train
-	DefaultBareMetalV1Microversion    = "1.58"
-	DefaultComputeV2Microversion      = "2.79"
-	DefaultIdentityV3Microversion     = "3.13"
-	DefaultBlockStorageV3Microversion = "3.59"
-	DefaultImageV2Microversion        = "2.9"
-
-)
-
-	type serviceConfig struct {
-		newClient       func(client *gophercloud.ProviderClient, eo gophercloud.EndpointOpts) (*gophercloud.ServiceClient, error)
-		getMicroversion func(spec *Spec) string
-	}
-*/

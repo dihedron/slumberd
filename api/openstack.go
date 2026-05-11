@@ -58,7 +58,7 @@ func newImpl(opts gophercloud.AuthOptions) (*Client, error) {
 	}
 
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
-		Region: "RegionOne", // Should probably be configurable
+		Region: "RegionOne", // TODO: should probably be configurable
 	})
 	if err != nil {
 		slog.Error("error creating compute v2 API client", "error", err)
