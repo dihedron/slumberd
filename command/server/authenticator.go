@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"fmt"
@@ -131,7 +131,7 @@ func (a *LDAPAuthenticator) Authenticate(username, password string) (bool, error
 
 	slog.Debug("user successfully retrieved")
 
-	// Extract the user's exact DN from the search result
+	// extract the user's exact DN from the search result
 	dn := result.Entries[0].DN
 
 	slog.Debug("user's DN found", "username", username, "dn", dn)

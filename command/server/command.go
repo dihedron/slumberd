@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type API struct {
+type Server struct {
 	base.Command
 
 	Address string `short:"a" long:"address" description:"Address to bind the API to." default:":3000"`
@@ -72,7 +72,7 @@ func NewVM(base string, id string, status string) *VM {
 	}
 }
 
-func (cmd *API) Execute(args []string) error {
+func (cmd *Server) Execute(args []string) error {
 	slog.Info("starting API server", "address", cmd.Address)
 
 	router := gin.New()
@@ -98,14 +98,12 @@ func (cmd *API) Execute(args []string) error {
 		WithUser("developer", "QWERTY"),
 	)
 
-	// the /login and /logout routes do not need authentication
 	unauthenticated := router.Group("")
 	{
-		unauthenticated.StaticFile("/favicon.ico", "./command/api/assets/favicon.ico")
-		unauthenticated.StaticFile("/devws.png", "./command/api/assets/devws.png")
-		unauthenticated.StaticFile("/login", "./command/api/assets/login.html")
-		unauthenticated.StaticFile("/style.css", "./command/api/assets/style.css")
-		unauthenticated.StaticFile("/background.jpg", "./command/api/assets/background.jpg")
+		unauthenticated.StaticFile("/favicon.ico", "./command/server/assets/favicon.ico")
+		unauthenticated.StaticFile("/devws.png", "./command/server/assets/devws.png")
+		unauthenticated.StaticFile("/style.css", "./command/server/assets/style.css")
+		unauthenticated.StaticFile("/background.jpg", "./command/server/assets/background.jpg")
 		unauthenticated.GET("/", func(c *gin.Context) {
 			session := sessions.Default(c)
 			if username := session.Get("username"); username != nil {
@@ -113,10 +111,13 @@ func (cmd *API) Execute(args []string) error {
 				c.Redirect(http.StatusFound, "/api/v1/vm/")
 			} else {
 				slog.Debug("user not logged in yet, redirecting to login page")
-				c.Redirect(http.StatusFound, "/login")
+				c.Redirect(http.StatusFound, "/api/v1/auth/login")
 			}
 		})
-		unauthenticated.POST("/login", func(c *gin.Context) {
+		// authentication endpoints: the /api/v1/auth/login and
+		// /api/v1/auth/logout routes do not need authentication
+		unauthenticated.StaticFile("/api/v1/auth/login", "./command/server/assets/login.html")
+		unauthenticated.POST("/api/v1/auth/login", func(c *gin.Context) {
 			username := c.PostForm("username")
 			password := c.PostForm("password")
 			slog.Debug("logging out user first...", "username", username)
@@ -135,11 +136,11 @@ func (cmd *API) Execute(args []string) error {
 				} else {
 					slog.Error("failed to autheticate user", "username", username, "error", err)
 				}
-				c.Redirect(http.StatusFound, "/login")
+				c.Redirect(http.StatusFound, "/api/v1/auth/login")
 			}
 
 		})
-		unauthenticated.GET("/logout", func(c *gin.Context) {
+		unauthenticated.GET("/api/v1/auth/logout", func(c *gin.Context) {
 			session := sessions.Default(c)
 			if username := session.Get("username"); username != nil {
 				slog.Debug("logging out user...", "username", username)

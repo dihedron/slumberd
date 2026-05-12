@@ -1,13 +1,13 @@
-package authenticate
+package login
 
 import (
 	"log/slog"
 
-	"github.com/dihedron/devws/command/api"
 	"github.com/dihedron/devws/command/base"
+	"github.com/dihedron/devws/command/server"
 )
 
-type Authenticate struct {
+type Login struct {
 	base.Command
 	// Address is the addrss of the LDAP server, including the schema.
 	Address string `short:"a" long:"address" description:"LDAP server address." default:"ldaps://ldap.example.com:636" required:"yes" env:"DEVWS_LDAP_ADDRESS"`
@@ -24,16 +24,11 @@ type Authenticate struct {
 	} `positional-args:"yes"`
 }
 
-func (cmd *Authenticate) Execute(args []string) error {
-	slog.Debug("running authenticate command", "address", cmd.Address, "username", cmd.Username, "password", cmd.Password, "base DN", cmd.BaseDN, "args", args)
-
-	// if len(args) < 2 {
-	// 	slog.Error("invalid format: username and password must be provided")
-	// 	return fmt.Errorf("invalid format: devws [options] <username> <password>")
-	// }
+func (cmd *Login) Execute(args []string) error {
+	slog.Debug("running login command", "address", cmd.Address, "username", cmd.Username, "password", cmd.Password, "base DN", cmd.BaseDN, "args", args)
 
 	// create the authenticator
-	authenticator, err := api.NewLDAPAuthenticator(cmd.Username, cmd.Password, cmd.Address, cmd.BaseDN)
+	authenticator, err := server.NewLDAPAuthenticator(cmd.Username, cmd.Password, cmd.Address, cmd.BaseDN)
 	if err != nil {
 		slog.Error("failed to create LDAP authenticator", "error", err)
 		return err
@@ -52,6 +47,6 @@ func (cmd *Authenticate) Execute(args []string) error {
 		slog.Error("failed authenticationg user", "username", cmd.Args.Username, "error", err)
 		return err
 	}
-	slog.Debug("authenticate command completed")
+	slog.Debug("login command completed")
 	return nil
 }

@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"log/slog"
@@ -70,43 +70,3 @@ func SessionAuthMiddleware(realm string, authenticator Authenticator) gin.Handle
 		c.Redirect(http.StatusFound, "/login")
 	}
 }
-
-/*
-
-func main() {
-	r := gin.Default()
-
-	// Initialize the session store (using a cookie for simplicity here)
-	// In production, use a strong, environment-variable-injected secret key.
-	store := cookie.NewStore([]byte("my-super-secret-key"))
-
-	// Register the session middleware FIRST so subsequent middlewares can use it
-	r.Use(sessions.Sessions("api_session", store))
-
-	// Group routes that require authentication
-	api := r.Group("/api")
-	api.Use(SessionAuthMiddleware()) // Apply our custom middleware
-	{
-		// Protected endpoint
-		api.GET("/data", func(c *gin.Context) {
-			session := sessions.Default(c)
-			user := session.Get("user")
-
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Welcome to the protected API!",
-				"user":    user,
-			})
-		})
-
-		// A route to demonstrate clearing the session (Logout)
-		api.POST("/logout", func(c *gin.Context) {
-			session := sessions.Default(c)
-			session.Clear()
-			session.Save()
-			c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
-		})
-	}
-
-	r.Run(":8080")
-}
-*/
